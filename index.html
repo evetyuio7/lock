@@ -52,10 +52,26 @@ button {
 button:hover {
     background: #555;
 }
+
+#startScreen {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+}
 </style>
 </head>
 
 <body>
+
+<div id="startScreen">
+    <button onclick="startApp()" style="width:200px;height:100px;font-size:28px;">
+        START
+    </button>
+</div>
 
 <div class="container">
     <h1>Enter PIN</h1>
@@ -79,13 +95,15 @@ button:hover {
         <button onclick="addNum('0')">0</button>
         <button onclick="checkPin()">OK</button>
     </div>
-
-    <br>
-    <button onclick="goFullscreen()">Go Fullscreen</button>
 </div>
 
 <script>
 const correctPin = "13579246802014";
+
+function startApp() {
+    document.documentElement.requestFullscreen();
+    document.getElementById("startScreen").style.display = "none";
+}
 
 function addNum(num) {
     document.getElementById("pinDisplay").value += num;
@@ -106,13 +124,9 @@ function checkPin() {
     }
 }
 
-function goFullscreen() {
-    document.documentElement.requestFullscreen();
-}
-
 document.addEventListener("fullscreenchange", () => {
     if (!document.fullscreenElement) {
-        console.log("User exited fullscreen");
+        console.log("Exited fullscreen");
     }
 });
 </script>
