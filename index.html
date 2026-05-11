@@ -9,11 +9,13 @@ body {
     margin: 0;
     background: #111;
     color: white;
-    font-family: Arial;
+    font-family: Arial, sans-serif;
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
+    overflow: hidden; /* Prevent scrolling */
+    user-select: none; /* Prevent text highlighting */
 }
 
 .container {
@@ -22,35 +24,41 @@ body {
 
 #pinDisplay {
     width: 320px;
-    height: 50px;
-    font-size: 28px;
+    height: 60px;
+    font-size: 32px;
     text-align: center;
     margin-bottom: 20px;
     border-radius: 10px;
-    border: none;
+    border: 2px solid #444;
     background: #222;
     color: white;
+    letter-spacing: 5px;
 }
 
 .grid {
     display: grid;
     grid-template-columns: repeat(3, 80px);
-    gap: 10px;
+    gap: 15px;
     justify-content: center;
 }
 
 button {
-    height: 70px;
+    height: 80px;
     font-size: 24px;
     border: none;
     border-radius: 12px;
     background: #333;
     color: white;
     cursor: pointer;
+    transition: background 0.2s;
 }
 
 button:hover {
     background: #555;
+}
+
+button:active {
+    background: #777;
 }
 
 #startScreen {
@@ -58,9 +66,16 @@ button:hover {
     inset: 0;
     background: #000;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     z-index: 999;
+}
+
+.warning {
+    margin-top: 20px;
+    color: #888;
+    font-size: 14px;
 }
 </style>
 </head>
@@ -68,15 +83,15 @@ button:hover {
 <body>
 
 <div id="startScreen">
-    <button onclick="startApp()" style="width:200px;height:100px;font-size:28px;">
-        START
+    <button onclick="startApp()" style="width:240px;height:100px;font-size:28px;">
+        START SESSION
     </button>
+    <p class="warning">Exiting fullscreen will terminate the session.</p>
 </div>
 
 <div class="container">
-    <h1>Enter PIN</h1>
-
-    <input id="pinDisplay" type="password" readonly>
+    <h1>Secure Entry</h1>
+    <input id="pinDisplay" type="password" readonly placeholder="••••">
 
     <div class="grid">
         <button onclick="addNum('1')">1</button>
@@ -91,42 +106,66 @@ button:hover {
         <button onclick="addNum('8')">8</button>
         <button onclick="addNum('9')">9</button>
 
-        <button onclick="clearPin()">C</button>
+        <button onclick="clearPin()" style="background: #522;">C</button>
         <button onclick="addNum('0')">0</button>
-        <button onclick="checkPin()">OK</button>
+        <button onclick="checkPin()" style="background: #252;">OK</button>
     </div>
 </div>
 
 <script>
 const correctPin = "13579246802014";
+const pinInput = document.getElementById("pinDisplay");
+let appStarted = false;
 
 function startApp() {
-    document.documentElement.requestFullscreen();
+    document.documentElement.requestFullscreen().catch(err => {
+        console.log("Fullscreen failed: " + err.message);
+    });
     document.getElementById("startScreen").style.display = "none";
+    appStarted = true;
 }
 
 function addNum(num) {
-    document.getElementById("pinDisplay").value += num;
+    if (pinInput.value.length < 20) {
+        pinInput.value += num;
+    }
 }
 
 function clearPin() {
-    document.getElementById("pinDisplay").value = "";
+    pinInput.value = "";
 }
 
 function checkPin() {
-    const pin = document.getElementById("pinDisplay").value;
-
-    if (pin === correctPin) {
-        alert("Unlocked!");
+    if (pinInput.value === correctPin) {
+        alert("Access Granted");
     } else {
-        alert("Wrong PIN");
+        alert("Access Denied");
         clearPin();
     }
 }
 
+// 1. Keyboard Support
+document.addEventListener("keydown", (e) => {
+    if (!appStarted) return;
+
+    if (e.key >= "0" && e.key <= "9") {
+        addNum(e.key);
+    } else if (e.key === "Enter") {
+        checkPin();
+    } else if (e.key === "Backspace" || e.key === "Escape") {
+        // We use Escape for clearing here, but browser will still trigger exit
+        clearPin();
+    }
+});
+
+// 2. The "Safety Tripwire" - Close tab on exit
 document.addEventListener("fullscreenchange", () => {
-    if (!document.fullscreenElement) {
-        console.log("Exited fullscreen");
+    if (appStarted && !document.fullscreenElement) {
+        // If user exits fullscreen, close the session
+        window.close();
+        
+        // Fallback for browsers that block window.close()
+        document.body.innerHTML = "<h1 style='color:white; text-align:center; margin-top:20%'>SESSION TERMINATED<br>Security violation: Fullscreen exited.</h1>";
     }
 });
 </script>
