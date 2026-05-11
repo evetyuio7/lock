@@ -2,14 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Secure Fullscreen Terminal</title>
+    <title>Secure Terminal</title>
     <style>
         body {
             margin: 0;
-            background: #111;
-            color: white;
-            font-family: 'Courier New', Courier, monospace;
+            background: #000;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -18,193 +17,130 @@
             user-select: none;
         }
 
-        .container {
-            text-align: center;
-        }
-
-        #pinDisplay {
-            width: 320px;
-            height: 60px;
-            font-size: 32px;
-            text-align: center;
-            margin-bottom: 25px;
-            border-radius: 8px;
-            border: 2px solid #444;
-            background: #000;
-            color: #0f0; /* Matrix green */
-            letter-spacing: 8px;
-            box-shadow: 0 0 15px rgba(0, 255, 0, 0.1);
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(3, 90px);
-            gap: 15px;
-            justify-content: center;
-        }
-
-        button {
-            height: 80px;
-            font-size: 24px;
-            border: 1px solid #444;
-            border-radius: 8px;
-            background: #222;
-            color: white;
-            cursor: pointer;
-            transition: all 0.1s;
-        }
-
-        button:hover {
-            background: #333;
-            border-color: #666;
-        }
-
-        button:active {
-            background: #0f0;
-            color: #000;
-        }
-
-        .btn-clear { background: #411; }
-        .btn-ok { background: #141; }
-
         #startScreen {
             position: fixed;
             inset: 0;
             background: #000;
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
-            z-index: 999;
+            z-index: 1000;
         }
 
-        #startScreen button {
-            width: 250px;
-            height: 100px;
+        .container { text-align: center; }
+
+        #pinDisplay {
+            width: 300px;
+            height: 50px;
             font-size: 30px;
+            text-align: center;
+            margin-bottom: 20px;
             background: #111;
-            border: 2px solid #0f0;
+            border: 1px solid #0f0;
             color: #0f0;
+            letter-spacing: 5px;
         }
 
-        .warning-text {
-            margin-top: 20px;
-            color: #666;
-            font-size: 14px;
-            text-transform: uppercase;
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 80px);
+            gap: 10px;
+        }
+
+        button {
+            height: 70px;
+            font-size: 20px;
+            background: #111;
+            border: 1px solid #333;
+            color: #0f0;
+            cursor: pointer;
+        }
+
+        button:active { background: #0f0; color: #000; }
+
+        .btn-start {
+            padding: 20px 40px;
+            font-size: 24px;
+            border: 2px solid #0f0;
         }
     </style>
 </head>
 <body>
 
 <div id="startScreen">
-    <button onclick="startApp()">INITIALIZE</button>
-    <p class="warning-text">System will lock on fullscreen exit</p>
+    <button class="btn-start" onclick="startApp()">INITIALIZE SYSTEM</button>
 </div>
 
 <div class="container">
-    <h2 style="color: #888;">SECURE AUTHENTICATION</h2>
-    <input id="pinDisplay" type="password" readonly placeholder="••••">
-
+    <input id="pinDisplay" type="password" readonly>
     <div class="grid">
         <button onclick="addNum('1')">1</button>
         <button onclick="addNum('2')">2</button>
         <button onclick="addNum('3')">3</button>
-
         <button onclick="addNum('4')">4</button>
         <button onclick="addNum('5')">5</button>
         <button onclick="addNum('6')">6</button>
-
         <button onclick="addNum('7')">7</button>
         <button onclick="addNum('8')">8</button>
         <button onclick="addNum('9')">9</button>
-
-        <button class="btn-clear" onclick="clearPin()">C</button>
+        <button style="color:red" onclick="terminate()">C</button>
         <button onclick="addNum('0')">0</button>
-        <button class="btn-ok" onclick="checkPin()">OK</button>
+        <button style="color:cyan" onclick="checkPin()">OK</button>
     </div>
 </div>
 
 <script>
     const correctPin = "13579246802014";
-    const pinInput = document.getElementById("pinDisplay");
-    let appStarted = false;
+    const display = document.getElementById("pinDisplay");
+    let active = false;
 
-    // Triggered by the Start Button
     function startApp() {
-        document.documentElement.requestFullscreen().catch(() => {
-            alert("Permission denied. Fullscreen is required.");
-        });
+        document.documentElement.requestFullscreen().catch(() => {});
         document.getElementById("startScreen").style.display = "none";
-        appStarted = true;
+        active = true;
     }
 
-    function addNum(num) {
-        if (pinInput.value.length < 20) {
-            pinInput.value += num;
-        }
-    }
-
-    function clearPin() {
-        pinInput.value = "";
-    }
+    function addNum(n) { display.value += n; }
 
     function checkPin() {
-        if (pinInput.value === correctPin) {
-            alert("ACCESS GRANTED");
-            // App remains in fullscreen
+        if (display.value === correctPin) {
+            alert("Authenticated.");
         } else {
-            // WRONG PIN: Force an exit from fullscreen
-            if (document.fullscreenElement) {
-                document.exitFullscreen();
-            } else {
-                // Handle case if they somehow aren't in fullscreen
-                handleSecurityViolation();
-            }
+            terminate();
         }
     }
 
-    // Keyboard support: Numbers, Enter to submit, Backspace to clear
-    document.addEventListener("keydown", (e) => {
-        if (!appStarted) return;
-
-        if (e.key >= "0" && e.key <= "9") {
-            addNum(e.key);
-        } else if (e.key === "Enter") {
-            checkPin();
-        } else if (e.key === "Backspace") {
-            clearPin();
-        }
-    });
-
-    // Security Tripwire: Fires when fullscreen is exited for ANY reason
-    document.addEventListener("fullscreenchange", () => {
-        if (appStarted && !document.fullscreenElement) {
-            handleSecurityViolation();
-        }
-    });
-
-    function handleSecurityViolation() {
-        // Attempt to close the tab
+    // This handles the "Self-Destruct"
+    function terminate() {
+        // Attempt to close the window
         window.close();
-
-        // Immediate UI lockout (if tab closing is blocked by browser)
-        document.body.innerHTML = `
-            <div style="background:#000; color:#ff0000; height:100vh; width:100vw; 
-                 display:flex; flex-direction:column; justify-content:center; 
-                 align-items:center; font-family:monospace; text-align:center;">
-                <h1 style="font-size: 50px; border: 5px solid red; padding: 20px;">
-                    LOCKOUT ACTIVATED
-                </h1>
-                <p style="font-size: 20px;">INVALID PIN OR MANUAL ESCAPE DETECTED.</p>
-                <p style="color: #444;">Session has been terminated for security.</p>
-                <button onclick="location.reload()" 
-                        style="margin-top:20px; background:transparent; color:red; 
-                        border:1px solid red; padding:10px 20px; cursor:pointer;">
-                    RESTART SYSTEM
-                </button>
-            </div>`;
+        
+        // If window.close fails (browser security), wipe the entire DOM 
+        // and force-exit fullscreen to break the app state
+        if (document.fullscreenElement) {
+            document.exitFullscreen();
+        }
+        document.body.innerHTML = "";
+        document.body.style.background = "black";
+        
+        // Final attempt to kick them out
+        location.replace("about:blank");
     }
+
+    // Keyboard support
+    document.addEventListener("keydown", (e) => {
+        if (!active) return;
+        if (e.key >= "0" && e.key <= "9") addNum(e.key);
+        if (e.key === "Enter") checkPin();
+        if (e.key === "Backspace") display.value = "";
+    });
+
+    // Detect if user tries to manually escape fullscreen
+    document.addEventListener("fullscreenchange", () => {
+        if (active && !document.fullscreenElement) {
+            terminate();
+        }
+    });
 </script>
 
 </body>
